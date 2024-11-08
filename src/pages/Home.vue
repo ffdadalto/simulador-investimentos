@@ -225,6 +225,9 @@ const rentabilidadePoupanca = ref<number>(0.5699);
                     <Chart type="bar" :data="chartData" :options="chartOptions" class="grafico" />
                 </div>
             </div>
+            <div class="col-12">
+                <span style="font-style: italic;">Versão 0.1.0</span>
+            </div>
         </div>
     </div>
 </template>
