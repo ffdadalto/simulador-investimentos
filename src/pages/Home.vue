@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
 import Line from '@/components/Line.vue';
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import Highcharts from 'highcharts';
 import RadioButton from 'primevue/radiobutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
+import { Divider } from 'primevue';
 
 const inicial = ref<number>(1000);
-const aporte = ref<number>(0);
-const meses = ref<number>(0);
+const aporte = ref<number>(100);
+const meses = ref<number>(12);
 const freqJuros = ref<string>('M');
 
 const versao = ref<{ major: number, minor: number, revision: number }>(
@@ -17,8 +18,12 @@ const versao = ref<{ major: number, minor: number, revision: number }>(
 );
 
 const rentCDB = ref<number>(13);
-const rentLCI_LCA = ref<number>(11.87);
+const rentLCI_LCA = ref<number>(12.00);
 const rentaPoup = ref<number>(0.7);
+
+const auxRentCDB = ref<number>(rentCDB.value);
+const auxRentLCI_LCA = ref<number>(rentLCI_LCA.value);
+const auxRentaPoup = ref<number>(rentaPoup.value);
 
 // Referência para o elemento DOM onde o gráfico será renderizado
 const chartContainer = ref<HTMLElement | null>(null);
@@ -64,7 +69,7 @@ const chartOptions: Highcharts.Options = {
             }
         },
         gridLineWidth: 0, // Remove as linhas de grade no eixo X
-        lineWidth: 0 // Remove a linha do eixo X
+        lineWidth: 0 // Remove a linha do eixo X            
     },
     yAxis: {
         title: {
@@ -76,11 +81,12 @@ const chartOptions: Highcharts.Options = {
         gridLineWidth: 0, // Remove as linhas de grade no eixo Y
         lineWidth: 0, // Remove a linha do eixo Y
         minorGridLineWidth: 0, // Remove as linhas de grade menores
-        tickWidth: 0 // Remove as linhas de marcação dos ticks
+        tickWidth: 0, // Remove as linhas de marcação dos ticks        
     },
     plotOptions: {
         series: {
-            borderWidth: 0, // Remove as bordas das barras
+            borderWidth: 0, // Remove as bordas das barras   
+
             dataLabels: {
                 enabled: true, // Habilita os rótulos
                 formatter: function () {
@@ -92,7 +98,7 @@ const chartOptions: Highcharts.Options = {
                 },
                 style: {
                     color: 'white', // Cor do texto dos rótulos
-                    fontSize: '10px', // Tamanho da fonte dos rótulos
+                    fontSize: '14px', // Tamanho da fonte dos rótulos
                     textOutline: 'none' // Remove o contorno (bordas) do texto
                 },
                 align: 'right', // Alinha os rótulos ao centro horizontalmente                
@@ -136,6 +142,10 @@ const calcularRendimentos = () => {
     for (let i = 0; i < investimentos.value.length; i++) {
         for (let j = 0; j < meses.value; j++) {
             const investimento = investimentos.value[i];
+            if (j != 0) {
+                investimento.receber += aporte.value;
+            }
+
             let valorJuros = investimento.receber * (investimento.rent / 12 / 100);
             investimento.receber += valorJuros;
         }
@@ -145,6 +155,25 @@ const calcularRendimentos = () => {
 const dialog = ref<boolean>(false);
 const openConfig = () => {
     dialog.value = true;
+};
+
+const save = () => {
+    rentCDB.value = auxRentCDB.value;
+    rentLCI_LCA.value = auxRentLCI_LCA.value;
+    rentaPoup.value = auxRentaPoup.value;
+    dialog.value = false;
+    renderChart();
+};
+
+const valoresInvestidos = computed((): number => {
+    return inicial.value + (aporte.value * meses.value);
+});
+
+const goSimulacao = () => {
+    const simulacao = document.getElementById('simulacao-investimento');
+    if (simulacao) {
+        simulacao.scrollIntoView({ behavior: 'smooth' });
+    }
 };
 
 </script>
@@ -191,7 +220,7 @@ const openConfig = () => {
                             </div>
                         </div>
                         <div class="col-12 col-md-4 col-lg-4 d-flex justify-content-end align-items-start">
-                            <Button pt:root:class="btn-config" @click="openConfig()"><i
+                            <Button pt:root:class="botao botao-config" @click="openConfig()"><i
                                     class="fa-sharp-duotone fa-solid fa-gears"></i></Button>
                         </div>
                     </div>
@@ -237,14 +266,42 @@ const openConfig = () => {
                     <p class="descricao-grafico">Veja quanto seu dinheiro pode render ao simular investimentos em
                         Tesouro Direto, CDBs, LCIs e
                         LCAs, fundos DI e compare com o retorno da poupança e a variação da inflação.</p>
-                    <div ref="chartContainer"></div> <!-- Div para renderizar o gráfico -->
+                    <div ref="chartContainer" style="height: 200px;"></div> <!-- Div para renderizar o gráfico -->
+                    <Button class="mt-4" pt:root:class="botao" @click="goSimulacao()"><i
+                            class="fa-solid fa-calculator"></i>Ver
+                        simulação</Button>
                 </div>
             </div>
-            <div class="col-12">
-                <span style="font-style: italic;font-size: 10px;">{{ `Versão:
-                    ${versao.major}.${versao.minor}.${versao.revision}` }}</span>
+        </div>
+        <div id="simulacao-investimento" class="simulacao">
+            <h3>Simulação do investimento</h3>
+            <Line></Line>
+            <div class="cabecalho d-flex justify-content-between">
+                <div>
+                    <p class="m-0">Valor inicial investido:</p>
+                    <h5 class="valores">{{ $formatar.moeda(inicial) }}</h5>
+                </div>
+                <Divider layout="vertical" />
+                <div>
+                    <p class="m-0">Aportes mensais:</p>
+                    <h5 class="valores">{{ $formatar.moeda(aporte) }}</h5>
+                </div>
+                <Divider layout="vertical" />
+                <div>
+                    <p class="m-0">Período de aplicação:</p>
+                    <h5 class="valores">{{ meses }} meses</h5>
+                </div>
+                <Divider layout="vertical" />
+                <div>
+                    <p class="m-0">Soma dos valores investidos:</p>
+                    <h5 class="valores">{{ $formatar.moeda(valoresInvestidos) }}</h5>
+                </div>
             </div>
         </div>
+    </div>
+    <div>
+        <span style="font-style: italic;font-size: 10px;">{{ `Versão:
+            ${versao.major}.${versao.minor}.${versao.revision}` }}</span>
     </div>
 
     <Dialog v-model:visible="dialog" modal header="Configurar índices" :style="{ width: '400px' }">
@@ -255,24 +312,24 @@ const openConfig = () => {
         </template>
         <div class="row g-3 py-2 px-4">
             <div class="col-12">
-                <label for="currency-us" class="font-bold block mb-2">CDB</label>
-                <InputNumber v-model="rentCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <label for="currency-us" class="font-bold block mb-2">CDB (a.a.)</label>
+                <InputNumber v-model="auxRentCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
-                <label for="currency-us" class="font-bold block mb-2">LC</label>
-                <InputNumber v-model="rentLCI_LCA" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <label for="currency-us" class="font-bold block mb-2">LC (a.a.)</label>
+                <InputNumber v-model="auxRentLCI_LCA" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
-                <label for="currency-us" class="font-bold block mb-2">Poupança</label>
-                <InputNumber v-model="rentaPoup" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <label for="currency-us" class="font-bold block mb-2">Poupança (a.a.)</label>
+                <InputNumber v-model="auxRentaPoup" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
         </div>
         <template #footer>
             <Button label="Cancel" text severity="danger" @click="dialog = false" autofocus />
-            <Button label="Save" outlined severity="primary" @click="dialog = false" autofocus />
+            <Button label="Save" outlined severity="primary" @click="save()" autofocus />
         </template>
     </Dialog>
 </template>
@@ -283,14 +340,19 @@ const openConfig = () => {
     height: 30rem;
 }
 
-.btn-config {
+.botao {
     background-color: #472f92;
     border-color: #472f92;
-    margin-bottom: 10px;
 }
 
-.btn-config:hover {
+.botao:hover {
     background-color: #6643d1 !important;
     border-color: #6643d1 !important;
+}
+
+.botao-config {
+    margin-bottom: 10px;
+    width: 40px;
+    height: 40px;
 }
 </style>

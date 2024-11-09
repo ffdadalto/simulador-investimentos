@@ -4,7 +4,7 @@ import Home from '@/pages/Home.vue';
 </script>
 
 <template>
-  <div class="container-fluid">
+  <div class="container">
     <Home></Home>
   </div>
 </template>

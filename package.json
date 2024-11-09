@@ -15,7 +15,8 @@
     "highcharts": "^11.4.8",
     "primevue": "^4.2.1",
     "saas": "^1.0.0",
-    "vue": "^3.5.12"
+    "vue": "^3.5.12",
+    "moment": "^2.29.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",

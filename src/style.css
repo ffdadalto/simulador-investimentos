@@ -51,7 +51,7 @@ h4 {
 .quadro-grafico {
     margin: 0 30px;
     background-color: #ececec;
-    padding: 80px 60px;
+    padding: 50px;
     border-radius: 4px;
 }
 
@@ -66,6 +66,10 @@ h4 {
     font-size: 1.6rem;
     margin-bottom: 20px;
     font-weight: 300;
+}
+
+.quadro-grafico h1 {
+    font-size: 3.5rem;
 }
 
 .quadro-grafico h1::before {
@@ -88,4 +92,19 @@ h4 {
     display: flex;
     justify-content: end;
     align-items: start;
+}
+
+.simulacao>h3::before {
+    content: "";
+    display: block;
+    width: 10%;
+    height: 5px;
+    background-color: #472f92;
+    margin-bottom: 20px;
+}
+
+.valores {
+    color: #00aeef;
+    font-weight: 700;
+    font-size: 18px;
 }
