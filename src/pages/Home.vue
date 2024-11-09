@@ -4,11 +4,19 @@ import Line from '@/components/Line.vue';
 import { onMounted, ref } from "vue";
 import Highcharts from 'highcharts';
 import RadioButton from 'primevue/radiobutton';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import { InputText } from 'primevue';
+
 
 const inicial = ref<number>(1000);
 const aporte = ref<number>(0);
 const meses = ref<number>(0);
 const pagJuros = ref<string>('M');
+
+const versao = ref<{ major: number, minor: number, revision: number }>(
+    { major: 0, minor: 5, revision: 0 }
+);
 
 const rentabilidadeCDB = ref<number>(13);
 const rentabilidadeLCI_LCA = ref<number>(11.87);
@@ -136,12 +144,17 @@ const calcularRendimentos = () => {
     }
 };
 
+const dialog = ref<boolean>(false);
+const openConfig = () => {
+    dialog.value = true;
+};
+
 </script>
 
 <template>
     <div id="main" class="mt-3">
         <div class="row">
-            <div class="col-12 col-md-12 col-lg-7">
+            <div class="col-12 col-md-12 col-lg-6">
                 <h1>Que aplicação rende mais?</h1>
                 <p class="sub-title">Veja quanto seu dinheiro pode render ao simular investimentos em Tesouro Direto,
                     CDBs,
@@ -151,22 +164,22 @@ const calcularRendimentos = () => {
                     e compare com o retorno da poupança e a variação da inflação.</p>
                 <div class="quadro-investimento mt-4">
                     <div class="row gx-5 gy-4">
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Investimento Inicial</label>
                             <InputNumber v-model="inicial" @blur="renderChart()" size="large" mode="currency"
                                 currency="BRL" locale="pt-BR" fluid :min="0.01" />
                         </div>
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Aportes mensais</label>
-                            <InputNumber v-model="aporte" @update:modelValue="renderChart()" size="large"
-                                mode="currency" currency="BRL" locale="pt-BR" fluid :min="0.01" />
+                            <InputNumber v-model="aporte" @blur="renderChart()" size="large" mode="currency"
+                                currency="BRL" locale="pt-BR" fluid :min="0.01" />
                         </div>
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <label for="currency-us" class="font-bold block mb-2">Período de aplicação</label>
-                            <InputNumber v-model="meses" @update:modelValue="renderChart()" mode="decimal" showButtons
-                                :min="1" :max="100" suffix=" meses" fluid size="large" />
+                            <InputNumber v-model="meses" @update:modelValue="renderChart()" @blur="renderChart()"
+                                mode="decimal" showButtons :min="1" :max="100" suffix=" meses" fluid size="large" />
                         </div>
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <label for="currency-us" class="font-bold block mb-2">Pegamentos dos juros</label>
                             <div class="radio">
                                 <div>
@@ -178,6 +191,10 @@ const calcularRendimentos = () => {
                                     <label class="ms-2">Anual</label>
                                 </div>
                             </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4 d-flex justify-content-end align-items-start">
+                            <Button pt:root:class="btn-config" @click="openConfig()"><i
+                                    class="fa-sharp-duotone fa-solid fa-gears"></i></Button>
                         </div>
                     </div>
                 </div>
@@ -199,7 +216,7 @@ const calcularRendimentos = () => {
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
                                 <h6>Rentabilidade da Poupança (a.a.)</h6>
-                                <h4>{{ rentabilidadePoupanca.toFixed(4) }} %</h4>
+                                <h4>{{ rentabilidadePoupanca.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12">
@@ -213,7 +230,7 @@ const calcularRendimentos = () => {
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-md-12 col-lg-5">
+            <div class="col-12 col-md-12 col-lg-6">
                 <div class="quadro-grafico">
                     <div class="d-flex justify-content-center align-items-center">
                         <div class="line"></div>
@@ -226,15 +243,56 @@ const calcularRendimentos = () => {
                 </div>
             </div>
             <div class="col-12">
-                <span style="font-style: italic;font-size: 10px;">Versão 0.2.0</span>
+                <span style="font-style: italic;font-size: 10px;">{{ `Versão:
+                    ${versao.major}.${versao.minor}.${versao.revision}` }}</span>
             </div>
         </div>
     </div>
+
+    <Dialog v-model:visible="dialog" modal header="Configurar índices" :style="{ width: '400px' }">
+        <template #header>
+            <div>
+                <h4><i class="fa-sharp-duotone fa-solid fa-gears me-2"></i>Configurar índices</h4>
+            </div>
+        </template>
+        <div class="row g-3 py-2 px-4">
+            <div class="col-12">
+                <label for="currency-us" class="font-bold block mb-2">CDB</label>
+                <InputNumber v-model="rentabilidadeCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                    :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+            </div>
+            <div class="col-12">
+                <label for="currency-us" class="font-bold block mb-2">LC</label>
+                <InputNumber v-model="rentabilidadeLCI_LCA" @blur="renderChart()" size="large" fluid
+                    :minFractionDigits="2" :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+            </div>
+            <div class="col-12">
+                <label for="currency-us" class="font-bold block mb-2">Poupança</label>
+                <InputNumber v-model="rentabilidadePoupanca" @blur="renderChart()" size="large" fluid
+                    :minFractionDigits="2" :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+            </div>
+        </div>
+        <template #footer>
+            <Button label="Cancel" text severity="danger" @click="dialog = false" autofocus />
+            <Button label="Save" outlined severity="primary" @click="dialog = false" autofocus />
+        </template>
+    </Dialog>
 </template>
 
 <style scoped>
 .grafico {
     width: 100%;
     height: 30rem;
+}
+
+.btn-config {
+    background-color: #472f92;
+    border-color: #472f92;
+    margin-bottom: 10px;
+}
+
+.btn-config:hover {
+    background-color: #6643d1 !important;
+    border-color: #6643d1 !important;
 }
 </style>
