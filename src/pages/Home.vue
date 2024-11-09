@@ -6,8 +6,6 @@ import Highcharts from 'highcharts';
 import RadioButton from 'primevue/radiobutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import { InputText } from 'primevue';
-
 
 const inicial = ref<number>(1000);
 const aporte = ref<number>(0);
