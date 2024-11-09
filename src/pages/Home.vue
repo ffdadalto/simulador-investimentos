@@ -10,24 +10,24 @@ import Dialog from 'primevue/dialog';
 const inicial = ref<number>(1000);
 const aporte = ref<number>(0);
 const meses = ref<number>(0);
-const pagJuros = ref<string>('M');
+const freqJuros = ref<string>('M');
 
 const versao = ref<{ major: number, minor: number, revision: number }>(
     { major: 0, minor: 5, revision: 0 }
 );
 
-const rentabilidadeCDB = ref<number>(13);
-const rentabilidadeLCI_LCA = ref<number>(11.87);
-const rentabilidadePoupanca = ref<number>(0.7);
+const rentCDB = ref<number>(13);
+const rentLCI_LCA = ref<number>(11.87);
+const rentaPoup = ref<number>(0.7);
 
 // Referência para o elemento DOM onde o gráfico será renderizado
 const chartContainer = ref<HTMLElement | null>(null);
 let chartInstance: Highcharts.Chart | null = null; // Referência para a instância do gráfico
 
-const investimentos = ref<{ nome: string, rentabilidade: number, aReceber: number }[]>([
-    { nome: 'LCI e LCA', rentabilidade: rentabilidadeLCI_LCA.value, aReceber: inicial.value },
-    { nome: 'CDB', rentabilidade: rentabilidadeCDB.value, aReceber: inicial.value },
-    { nome: 'Poupança', rentabilidade: rentabilidadePoupanca.value, aReceber: inicial.value }
+const investimentos = ref<{ nome: string, rent: number, receber: number, imposto: boolean }[]>([
+    { nome: 'LCI e LCA', rent: rentLCI_LCA.value, receber: inicial.value, imposto: false },
+    { nome: 'CDB', rent: rentCDB.value, receber: inicial.value, imposto: true },
+    { nome: 'Poupança', rent: rentaPoup.value, receber: inicial.value, imposto: false },
 ]);
 
 // Usando o onMounted para inicializar o gráfico quando o componente é montado
@@ -51,7 +51,7 @@ const chartOptions: Highcharts.Options = {
         enabled: false // Desabilita o tooltip
     },
     xAxis: {
-        categories: investimentos.value.orderByDescending(i => i.aReceber).map(i => i.nome), // Categorias do eixo X
+        categories: investimentos.value.orderByDescending(i => i.receber).map(i => i.nome), // Categorias do eixo X
         title: {
             text: ''
         },
@@ -107,7 +107,7 @@ const chartOptions: Highcharts.Options = {
         {
             name: '',
             type: 'bar',
-            data: investimentos.value.orderByDescending(i => i.aReceber).map(i => i.aReceber), // Dados da série
+            data: investimentos.value.orderByDescending(i => i.receber).map(i => i.receber), // Dados da série
             showInLegend: false // Garante que a série não será exibida na legenda
         }
     ]
@@ -117,8 +117,8 @@ const renderChart = () => {
     calcularRendimentos();
     if (chartInstance) {
         // Atualiza os dados da série existente
-        chartInstance.series[0].setData(investimentos.value.orderByDescending(i => i.aReceber).map(i => i.aReceber));
-        chartInstance.xAxis[0].setCategories(investimentos.value.orderByDescending(i => i.aReceber).map(i => i.nome));
+        chartInstance.series[0].setData(investimentos.value.orderByDescending(i => i.receber).map(i => i.receber));
+        chartInstance.xAxis[0].setCategories(investimentos.value.orderByDescending(i => i.receber).map(i => i.nome));
     } else {
         // Cria o gráfico se ainda não foi criado
         chartInstance = Highcharts.chart(chartContainer.value as HTMLElement, chartOptions);
@@ -128,16 +128,16 @@ const renderChart = () => {
 const calcularRendimentos = () => {
     // Reinicializa os valores dos investimentos
     investimentos.value = [
-        { nome: 'LCI e LCA', rentabilidade: rentabilidadeLCI_LCA.value, aReceber: inicial.value },
-        { nome: 'CDB', rentabilidade: rentabilidadeCDB.value, aReceber: inicial.value },
-        { nome: 'Poupança', rentabilidade: rentabilidadePoupanca.value, aReceber: inicial.value }
+        { nome: 'LCI e LCA', rent: rentLCI_LCA.value, receber: inicial.value, imposto: false },
+        { nome: 'CDB', rent: rentCDB.value, receber: inicial.value, imposto: true },
+        { nome: 'Poupança', rent: rentaPoup.value, receber: inicial.value, imposto: false },
     ];
 
     for (let i = 0; i < investimentos.value.length; i++) {
         for (let j = 0; j < meses.value; j++) {
             const investimento = investimentos.value[i];
-            let valorJuros = investimento.aReceber * (investimento.rentabilidade / 12 / 100);
-            investimento.aReceber += valorJuros;
+            let valorJuros = investimento.receber * (investimento.rent / 12 / 100);
+            investimento.receber += valorJuros;
         }
     }
 };
@@ -153,7 +153,7 @@ const openConfig = () => {
     <div id="main" class="mt-3">
         <div class="row">
             <div class="col-12 col-md-12 col-lg-6">
-                <h1>Que aplicação rende mais?</h1>
+                <h1 class="teste">Que aplicação rende mais?</h1>
                 <p class="sub-title">Veja quanto seu dinheiro pode render ao simular investimentos em Tesouro Direto,
                     CDBs,
                     LCIs
@@ -181,11 +181,11 @@ const openConfig = () => {
                             <label for="currency-us" class="font-bold block mb-2">Pegamentos dos juros</label>
                             <div class="radio">
                                 <div>
-                                    <RadioButton disabled v-model="pagJuros" value="M" />
+                                    <RadioButton disabled v-model="freqJuros" value="M" />
                                     <label class="ms-2">Mensal</label>
                                 </div>
                                 <div>
-                                    <RadioButton disabled v-model="pagJuros" value="A" />
+                                    <RadioButton disabled v-model="freqJuros" value="A" />
                                     <label class="ms-2">Anual</label>
                                 </div>
                             </div>
@@ -202,19 +202,19 @@ const openConfig = () => {
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
                                 <h6>Rentabilidade do CDB (a.a.)</h6>
-                                <h4>{{ rentabilidadeCDB.toFixed(2) }} %</h4>
+                                <h4>{{ rentCDB.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
                                 <h6>Rentabilidade da LCI/LCA (a.a.)</h6>
-                                <h4>{{ rentabilidadeLCI_LCA.toFixed(2) }} %</h4>
+                                <h4>{{ rentLCI_LCA.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
                                 <h6>Rentabilidade da Poupança (a.a.)</h6>
-                                <h4>{{ rentabilidadePoupanca.toFixed(2) }} %</h4>
+                                <h4>{{ rentaPoup.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12">
@@ -256,18 +256,18 @@ const openConfig = () => {
         <div class="row g-3 py-2 px-4">
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">CDB</label>
-                <InputNumber v-model="rentabilidadeCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <InputNumber v-model="rentCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">LC</label>
-                <InputNumber v-model="rentabilidadeLCI_LCA" @blur="renderChart()" size="large" fluid
-                    :minFractionDigits="2" :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+                <InputNumber v-model="rentLCI_LCA" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                    :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">Poupança</label>
-                <InputNumber v-model="rentabilidadePoupanca" @blur="renderChart()" size="large" fluid
-                    :minFractionDigits="2" :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+                <InputNumber v-model="rentaPoup" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                    :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
         </div>
         <template #footer>
