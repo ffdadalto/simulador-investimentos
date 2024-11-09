@@ -226,7 +226,7 @@ const calcularRendimentos = () => {
                 </div>
             </div>
             <div class="col-12">
-                <span style="font-style: italic;font-size: 10px;">Versão 0.1.0</span>
+                <span style="font-style: italic;font-size: 10px;">Versão 0.2.0</span>
             </div>
         </div>
     </div>
