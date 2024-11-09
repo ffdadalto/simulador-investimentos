@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
 import Line from '@/components/Line.vue';
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import Highcharts from 'highcharts';
 
 // Usando o onMounted para inicializar o gráfico quando o componente é montado
