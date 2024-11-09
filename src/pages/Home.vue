@@ -3,37 +3,31 @@ import InputNumber from 'primevue/inputnumber';
 import Line from '@/components/Line.vue';
 import { onMounted, ref } from "vue";
 import Highcharts from 'highcharts';
+import RadioButton from 'primevue/radiobutton';
 
-// Usando o onMounted para inicializar o gráfico quando o componente é montado
-onMounted(() => {
-    if (chartContainer.value) {
-        Highcharts.chart(chartContainer.value, chartOptions);
-    }
-});
-
-const inicial = ref<number>(0);
+const inicial = ref<number>(1000);
 const aporte = ref<number>(0);
-const meses = ref<number>(10);
+const meses = ref<number>(0);
+const pagJuros = ref<string>('M');
 
-const selic = ref<number>(11.15);
-const CDI = ref<number>(11.15);
-const IPCA = ref<number>(4.08);
-const TR = ref<number>(0.0696);
-
-const juroNominalTesouroPrefixado = ref<number>(10.50);
-const taxaCustodiaTesouroDireto = ref<number>(0.20);
-
-const juroRealTesouroIPCA = ref<number>(5.50);
-const taxaAdministracaoFundoDI = ref<number>(0.25);
-
-const rentabilidadeCDB = ref<number>(100);
-const rentabilidadeFundoDI = ref<number>(98.17);
-
-const rentabilidadeLCI_LCA = ref<number>(85);
-const rentabilidadePoupanca = ref<number>(0.5699);
+const rentabilidadeCDB = ref<number>(13);
+const rentabilidadeLCI_LCA = ref<number>(11.87);
+const rentabilidadePoupanca = ref<number>(0.7);
 
 // Referência para o elemento DOM onde o gráfico será renderizado
 const chartContainer = ref<HTMLElement | null>(null);
+let chartInstance: Highcharts.Chart | null = null; // Referência para a instância do gráfico
+
+const investimentos = ref<{ nome: string, rentabilidade: number, aReceber: number }[]>([
+    { nome: 'LCI e LCA', rentabilidade: rentabilidadeLCI_LCA.value, aReceber: inicial.value },
+    { nome: 'CDB', rentabilidade: rentabilidadeCDB.value, aReceber: inicial.value },
+    { nome: 'Poupança', rentabilidade: rentabilidadePoupanca.value, aReceber: inicial.value }
+]);
+
+// Usando o onMounted para inicializar o gráfico quando o componente é montado
+onMounted(() => {
+    renderChart();
+});
 
 // Opções do gráfico de barras na horizontal
 const chartOptions: Highcharts.Options = {
@@ -51,16 +45,7 @@ const chartOptions: Highcharts.Options = {
         enabled: false // Desabilita o tooltip
     },
     xAxis: {
-        categories: [
-            'LCI e LCA',
-            'CDB',
-            'Tesouro Selic',
-            'Fundo DI',
-            'Tesouro Prefixado',
-            'Tesouro IPCA+',
-            'Poupança',
-            'Correção pelo IPCA',
-        ],
+        categories: investimentos.value.orderByDescending(i => i.aReceber).map(i => i.nome), // Categorias do eixo X
         title: {
             text: ''
         },
@@ -116,10 +101,39 @@ const chartOptions: Highcharts.Options = {
         {
             name: '',
             type: 'bar',
-            data: [10, 13, 12, 14, 15, 10, 8, 15], // Dados da série
+            data: investimentos.value.orderByDescending(i => i.aReceber).map(i => i.aReceber), // Dados da série
             showInLegend: false // Garante que a série não será exibida na legenda
         }
     ]
+};
+
+const renderChart = () => {
+    calcularRendimentos();
+    if (chartInstance) {
+        // Atualiza os dados da série existente
+        chartInstance.series[0].setData(investimentos.value.orderByDescending(i => i.aReceber).map(i => i.aReceber));
+        chartInstance.xAxis[0].setCategories(investimentos.value.orderByDescending(i => i.aReceber).map(i => i.nome));
+    } else {
+        // Cria o gráfico se ainda não foi criado
+        chartInstance = Highcharts.chart(chartContainer.value as HTMLElement, chartOptions);
+    }
+}
+
+const calcularRendimentos = () => {
+    // Reinicializa os valores dos investimentos
+    investimentos.value = [
+        { nome: 'LCI e LCA', rentabilidade: rentabilidadeLCI_LCA.value, aReceber: inicial.value },
+        { nome: 'CDB', rentabilidade: rentabilidadeCDB.value, aReceber: inicial.value },
+        { nome: 'Poupança', rentabilidade: rentabilidadePoupanca.value, aReceber: inicial.value }
+    ];
+
+    for (let i = 0; i < investimentos.value.length; i++) {
+        for (let j = 0; j < meses.value; j++) {
+            const investimento = investimentos.value[i];
+            let valorJuros = investimento.aReceber * (investimento.rentabilidade / 12 / 100);
+            investimento.aReceber += valorJuros;
+        }
+    }
 };
 
 </script>
@@ -137,48 +151,32 @@ const chartOptions: Highcharts.Options = {
                     e compare com o retorno da poupança e a variação da inflação.</p>
                 <div class="quadro-investimento mt-4">
                     <div class="row gx-5 gy-4">
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <div class="col-12 col-md-6 col-lg-3">
                             <label for="currency-us" class="font-bold block mb-2">Investimento Inicial</label>
-                            <InputNumber v-model="inicial" size="large" mode="currency" currency="BRL" locale="pt-BR"
-                                fluid />
+                            <InputNumber v-model="inicial" @blur="renderChart()" size="large" mode="currency"
+                                currency="BRL" locale="pt-BR" fluid :min="0.01" />
                         </div>
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <div class="col-12 col-md-6 col-lg-3">
                             <label for="currency-us" class="font-bold block mb-2">Aportes mensais</label>
-                            <InputNumber v-model="aporte" size="large" mode="currency" currency="BRL" locale="pt-BR"
-                                fluid />
+                            <InputNumber v-model="aporte" @update:modelValue="renderChart()" size="large"
+                                mode="currency" currency="BRL" locale="pt-BR" fluid :min="0.01" />
                         </div>
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <div class="col-12 col-md-6 col-lg-3">
                             <label for="currency-us" class="font-bold block mb-2">Período de aplicação</label>
-                            <InputNumber v-model="meses" inputId="minmax-buttons" mode="decimal" showButtons :min="0"
-                                :max="100" suffix=" meses" fluid size="large" />
-                        </div>
-                    </div>
-                </div>
-                <Line></Line>
-                <div id="quadro-indices">
-                    <div class="row gx-3 gy-4">
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="quadro-input">
-                                <h6>Selic efetiva (a.a.)</h6>
-                                <h4>{{ selic.toFixed(2) }} %</h4>
-                            </div>
+                            <InputNumber v-model="meses" @update:modelValue="renderChart()" mode="decimal" showButtons
+                                :min="1" :max="100" suffix=" meses" fluid size="large" />
                         </div>
                         <div class="col-12 col-md-6 col-lg-3">
-                            <div class="quadro-input">
-                                <h6>CDI (a.a.)</h6>
-                                <h4>{{ CDI.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="quadro-input">
-                                <h6>IPCA (a.a.)</h6>
-                                <h4>{{ IPCA.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="quadro-input">
-                                <h6>TR (a.m.)</h6>
-                                <h4>{{ TR.toFixed(4) }} %</h4>
+                            <label for="currency-us" class="font-bold block mb-2">Pegamentos dos juros</label>
+                            <div class="radio">
+                                <div>
+                                    <RadioButton disabled v-model="pagJuros" value="M" />
+                                    <label class="ms-2">Mensal</label>
+                                </div>
+                                <div>
+                                    <RadioButton disabled v-model="pagJuros" value="A" />
+                                    <label class="ms-2">Anual</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -188,54 +186,25 @@ const chartOptions: Highcharts.Options = {
                     <div class="row gy-5 gx-3">
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
-                                <h6>Juro nominal do Tesouro Prefixado (a.a.)</h6>
-                                <h4>{{ juroNominalTesouroPrefixado.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Taxa de custódia da B3 no Tesouro Direto (a.a.)</h6>
-                                <h4>{{ taxaCustodiaTesouroDireto.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Juro real do Tesouro IPCA+ (a.a.)</h6>
-                                <h4>{{ juroRealTesouroIPCA.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Taxa de administração do Fundo DI (a.a.)</h6>
-                                <h4>{{ taxaAdministracaoFundoDI.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Rentabilidade do CDB</h6>
+                                <h6>Rentabilidade do CDB (a.a.)</h6>
                                 <h4>{{ rentabilidadeCDB.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
-                                <h6>Rentabilidade do Fundo DI (% do CDI) </h6>
-                                <h4>{{ rentabilidadeFundoDI.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Rentabilidade da LCI/LCA </h6>
+                                <h6>Rentabilidade da LCI/LCA (a.a.)</h6>
                                 <h4>{{ rentabilidadeLCI_LCA.toFixed(2) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="quadro-input">
-                                <h6>Rentabilidade da Poupança (a.m.)</h6>
+                                <h6>Rentabilidade da Poupança (a.a.)</h6>
                                 <h4>{{ rentabilidadePoupanca.toFixed(4) }} %</h4>
                             </div>
                         </div>
                         <div class="col-12">
-                            <p class="aviso mb-5">Esses são os parâmetros padrőes utilizados na sua simulação. Você pode
+                            <p class="aviso mb-5">Esses são os parâmetros padrőes utilizados na sua simulação. Você
+                                pode
                                 alterá-los
                                 e refazer os
                                 cálculos para
