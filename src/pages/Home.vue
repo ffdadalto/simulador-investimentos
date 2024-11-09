@@ -1,79 +1,19 @@
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
 import Line from '@/components/Line.vue';
-import Chart from 'primevue/chart';
-import { ref, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
+import Highcharts from 'highcharts';
 
+// Usando o onMounted para inicializar o gráfico quando o componente é montado
 onMounted(() => {
-    chartData.value = setChartData();
-    chartOptions.value = setChartOptions();
+    if (chartContainer.value) {
+        Highcharts.chart(chartContainer.value, chartOptions);
+    }
 });
-
-const chartData = ref();
-const chartOptions = ref();
-
-const setChartData = () => {
-    const documentStyle = getComputedStyle(document.documentElement);
-
-    return {
-        labels: ['LCI e LCA', 'CDB', 'Tesouro Selic', 'Fundo DI', 'Tesouro Prefixado', 'Tesouro IPCA+', 'Poupança', 'Correção pelo IPCA'],
-        datasets: [
-            {
-                label: 'Rendimentos (R$)',
-                backgroundColor: documentStyle.getPropertyValue('--p-cyan-500'),
-                borderColor: documentStyle.getPropertyValue('--p-cyan-500'),
-                data: [65, 59, 80, 81, 56, 55, 40, 34]
-            }
-        ]
-    };
-};
-
-const setChartOptions = () => {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--p-text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
-    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
-
-    return {
-        indexAxis: 'y',
-        maintainAspectRatio: false,
-        aspectRatio: 0.8,
-        plugins: {
-            legend: {
-                labels: {
-                    color: textColor
-                }
-            }
-        },
-        scales: {
-            x: {
-                ticks: {
-                    color: textColorSecondary,
-                    font: {
-                        weight: 500
-                    }
-                },
-                grid: {
-                    display: false,
-                    drawBorder: false
-                }
-            },
-            y: {
-                ticks: {
-                    color: textColorSecondary
-                },
-                grid: {
-                    color: surfaceBorder,
-                    drawBorder: false
-                }
-            }
-        }
-    };
-}
 
 const inicial = ref<number>(0);
 const aporte = ref<number>(0);
-const meses = ref<number>(0);
+const meses = ref<number>(10);
 
 const selic = ref<number>(11.15);
 const CDI = ref<number>(11.15);
@@ -91,6 +31,97 @@ const rentabilidadeFundoDI = ref<number>(98.17);
 
 const rentabilidadeLCI_LCA = ref<number>(85);
 const rentabilidadePoupanca = ref<number>(0.5699);
+
+// Referência para o elemento DOM onde o gráfico será renderizado
+const chartContainer = ref<HTMLElement | null>(null);
+
+// Opções do gráfico de barras na horizontal
+const chartOptions: Highcharts.Options = {
+    chart: {
+        type: 'bar', // Tipo de gráfico de barras na horizontal
+        backgroundColor: '' // Deixa o fundo do gráfico transparente
+    },
+    title: {
+        text: ''
+    },
+    legend: {
+        enabled: false // Desabilita a legenda, removendo a opção de desmarcar a série
+    },
+    tooltip: {
+        enabled: false // Desabilita o tooltip
+    },
+    xAxis: {
+        categories: [
+            'LCI e LCA',
+            'CDB',
+            'Tesouro Selic',
+            'Fundo DI',
+            'Tesouro Prefixado',
+            'Tesouro IPCA+',
+            'Poupança',
+            'Correção pelo IPCA',
+        ],
+        title: {
+            text: ''
+        },
+        labels: {
+            enabled: true, // Habilita os rótulos do eixo X
+            style: {
+                color: '#333', // Cor da fonte
+                fontSize: '12px', // Tamanho da fonte
+                fontFamily: 'Arial', // Tipo de fonte                
+            }
+        },
+        gridLineWidth: 0, // Remove as linhas de grade no eixo X
+        lineWidth: 0 // Remove a linha do eixo X
+    },
+    yAxis: {
+        title: {
+            text: '' // Desabilita o título do eixo Y
+        },
+        labels: {
+            enabled: false // Desabilita os rótulos do eixo X
+        },
+        gridLineWidth: 0, // Remove as linhas de grade no eixo Y
+        lineWidth: 0, // Remove a linha do eixo Y
+        minorGridLineWidth: 0, // Remove as linhas de grade menores
+        tickWidth: 0 // Remove as linhas de marcação dos ticks
+    },
+    plotOptions: {
+        series: {
+            borderWidth: 0, // Remove as bordas das barras
+            dataLabels: {
+                enabled: true, // Habilita os rótulos
+                formatter: function () {
+                    // Formata o valor da série como moeda BRL
+                    return new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }).format(this.y as number);
+                },
+                style: {
+                    color: 'white', // Cor do texto dos rótulos
+                    fontSize: '10px', // Tamanho da fonte dos rótulos
+                    textOutline: 'none' // Remove o contorno (bordas) do texto
+                },
+                align: 'right', // Alinha os rótulos ao centro horizontalmente                
+                inside: true, // Garante que os rótulos fiquem dentro das barras                
+            }
+        }
+    },
+    credits: {
+        enabled: false // Remove a marca d'água (logotipo) do Highcharts
+    },
+    series: [
+        {
+            name: '',
+            type: 'bar',
+            data: [10, 13, 12, 14, 15, 10, 8, 15], // Dados da série
+            showInLegend: false // Garante que a série não será exibida na legenda
+        }
+    ]
+};
+
 </script>
 
 <template>
@@ -222,7 +253,7 @@ const rentabilidadePoupanca = ref<number>(0.5699);
                     <p class="descricao-grafico">Veja quanto seu dinheiro pode render ao simular investimentos em
                         Tesouro Direto, CDBs, LCIs e
                         LCAs, fundos DI e compare com o retorno da poupança e a variação da inflação.</p>
-                    <Chart type="bar" :data="chartData" :options="chartOptions" class="grafico" />
+                    <div ref="chartContainer"></div> <!-- Div para renderizar o gráfico -->
                 </div>
             </div>
             <div class="col-12">

@@ -1,4 +1,4 @@
-name: Deploy to NGINX Server
+name: Deploy to linux home server
 
 on:
   push:
