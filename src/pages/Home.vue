@@ -183,12 +183,15 @@ const goSimulacao = () => {
         <div class="row">
             <div class="col-12 col-md-12 col-lg-6">
                 <h1 class="teste">Que aplicação rende mais?</h1>
-                <p class="sub-title">Veja quanto seu dinheiro pode render ao simular investimentos em Tesouro Direto,
+                <!-- <p class="sub-title">Veja quanto seu dinheiro pode render ao simular investimentos em Tesouro Direto,
                     CDBs,
                     LCIs
                     e LCAs, fundos
                     DI
-                    e compare com o retorno da poupança e a variação da inflação.</p>
+                    e compare com o retorno da poupança e a variação da inflação.</p> -->
+                <p class="sub-title">Explore como seu dinheiro pode crescer simulando investimentos em Tesouro Direto,
+                    CDBs, LCIs, LCAs e fundos DI. Compare os resultados com o rendimento da poupança e a oscilação da
+                    inflação.</p>
                 <div class="quadro-investimento mt-4">
                     <div class="row gx-5 gy-4">
                         <div class="col-12 col-md-6 col-lg-6">
@@ -263,9 +266,9 @@ const goSimulacao = () => {
                         <div class="line"></div>
                     </div>
                     <h1>Calculadora de Renda Fixa</h1>
-                    <p class="descricao-grafico">Veja quanto seu dinheiro pode render ao simular investimentos em
-                        Tesouro Direto, CDBs, LCIs e
-                        LCAs, fundos DI e compare com o retorno da poupança e a variação da inflação.</p>
+                    <p class="descricao-grafico">Descubra o potencial de rendimento do seu dinheiro ao simular
+                        aplicações em Tesouro Direto, CDBs, LCIs, LCAs e fundos DI. Compare esses retornos com a
+                        rentabilidade da poupança e a variação da inflação.</p>
                     <div ref="chartContainer" style="height: 200px;"></div> <!-- Div para renderizar o gráfico -->
                     <Button class="mt-4" pt:root:class="botao" @click="goSimulacao()"><i
                             class="fa-solid fa-calculator"></i>Ver
