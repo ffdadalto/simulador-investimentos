@@ -11,7 +11,6 @@ import { CDIClient, IPCAClient, SelicClient } from '@/classes/API';
 import { CDI } from '@/classes/CDI';
 import { Selic } from '@/classes/Selic';
 import { IPCA } from '@/classes/IPCA';
-import axios from 'axios';
 
 const inicial = ref<number>(1000);
 const aporte = ref<number>(100);

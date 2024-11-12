@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse, CancelToken } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { Selic } from "./Selic";
 import { URL_SELIC, URL_CDI, URL_IPCA } from '@/data/urls'
 import { CDI } from "./CDI";
