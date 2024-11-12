@@ -18,7 +18,7 @@ const meses = ref<number>(12);
 const freqJuros = ref<string>('M');
 
 const versao = ref<{ major: number, minor: number, revision: number }>(
-    { major: 0, minor: 6, revision: 0 }
+    { major: 0, minor: 7, revision: 0 }
 );
 
 const rentCDB = ref<number>(13);
