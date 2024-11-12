@@ -7,6 +7,11 @@ import RadioButton from 'primevue/radiobutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import { Divider } from 'primevue';
+import { CDIClient, IPCAClient, SelicClient } from '@/classes/API';
+import { CDI } from '@/classes/CDI';
+import { Selic } from '@/classes/Selic';
+import { IPCA } from '@/classes/IPCA';
+import axios from 'axios';
 
 const inicial = ref<number>(1000);
 const aporte = ref<number>(100);
@@ -25,6 +30,32 @@ const auxRentCDB = ref<number>(rentCDB.value);
 const auxRentLCI_LCA = ref<number>(rentLCI_LCA.value);
 const auxRentaPoup = ref<number>(rentaPoup.value);
 
+// Usando o onMounted para inicializar o gráfico quando o componente é montado
+onMounted(async () => {
+    renderChart();
+    await carregaSelic();
+    await carregaCDI();
+    await carregaIPCA();
+});
+
+const clientSelic = new SelicClient();
+const dadosSelic = ref<Selic[]>([]);
+const carregaSelic = async () => {
+    dadosSelic.value = await clientSelic.getAll();
+};
+
+const clientCDI = new CDIClient();
+const dadosCDI = ref<CDI[]>([]);
+const carregaCDI = async () => {
+    dadosCDI.value = await clientCDI.getAll();
+};
+
+const clientIPCA = new IPCAClient();
+const dadosIPCA = ref<IPCA[]>([]);
+const carregaIPCA = async () => {
+    dadosIPCA.value = await clientIPCA.getAll();
+};
+
 // Referência para o elemento DOM onde o gráfico será renderizado
 const chartContainer = ref<HTMLElement | null>(null);
 let chartInstance: Highcharts.Chart | null = null; // Referência para a instância do gráfico
@@ -34,11 +65,6 @@ const investimentos = ref<{ nome: string, rent: number, receber: number, imposto
     { nome: 'CDB', rent: rentCDB.value, receber: inicial.value, imposto: true },
     { nome: 'Poupança', rent: rentaPoup.value, receber: inicial.value, imposto: false },
 ]);
-
-// Usando o onMounted para inicializar o gráfico quando o componente é montado
-onMounted(() => {
-    renderChart();
-});
 
 // Opções do gráfico de barras na horizontal
 const chartOptions: Highcharts.Options = {
