@@ -12,6 +12,13 @@ import { CDI } from '@/classes/CDI';
 import { Selic } from '@/classes/Selic';
 import { IPCA } from '@/classes/IPCA';
 
+// Diretiva
+const vAutofocus = {
+    mounted: (el: any): void => {
+        el.children[0].focus()
+    }
+};
+
 const inicial = ref<number>(1000);
 const aporte = ref<number>(100);
 const meses = ref<number>(12);
@@ -222,7 +229,7 @@ const goSimulacao = () => {
                         <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Investimento Inicial</label>
                             <InputNumber v-model="inicial" @blur="renderChart()" size="large" mode="currency"
-                                currency="BRL" locale="pt-BR" fluid :min="0.01" />
+                                currency="BRL" locale="pt-BR" fluid :min="0.01" v-autofocus />
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Aportes mensais</label>
