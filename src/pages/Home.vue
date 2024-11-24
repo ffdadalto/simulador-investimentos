@@ -7,10 +7,13 @@ import RadioButton from 'primevue/radiobutton';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import { Divider } from 'primevue';
-import { CDIClient, IPCAClient, SelicClient } from '@/classes/API';
+import { CDIClient, IPCAClient, PoupancaClient, SelicClient } from '@/classes/API';
 import { CDI } from '@/classes/CDI';
 import { Selic } from '@/classes/Selic';
 import { IPCA } from '@/classes/IPCA';
+import Skeleton from 'primevue/skeleton';
+import { Poupanca } from '@/classes/Poupanca';
+
 
 // Diretiva
 const vAutofocus = {
@@ -25,7 +28,7 @@ const meses = ref<number>(12);
 const freqJuros = ref<string>('M');
 
 const versao = ref<{ major: number, minor: number, revision: number }>(
-    { major: 0, minor: 7, revision: 0 }
+    { major: 0, minor: 8, revision: 0 }
 );
 
 const rentCDB = ref<number>(13);
@@ -37,30 +40,66 @@ const auxRentLCI_LCA = ref<number>(rentLCI_LCA.value);
 const auxRentaPoup = ref<number>(rentaPoup.value);
 
 // Usando o onMounted para inicializar o gráfico quando o componente é montado
-onMounted(async () => {
+onMounted(() => {
     renderChart();
-    await carregaSelic();
-    await carregaCDI();
-    await carregaIPCA();
+    carregaSelic();
+    carregaCDI();
+    carregaIPCA();
+    carregaPoupanca();
 });
 
 const clientSelic = new SelicClient();
 const dadosSelic = ref<Selic[]>([]);
+const loadingSelic = ref<boolean>(true);
 const carregaSelic = async () => {
+    loadingSelic.value = true;
     dadosSelic.value = await clientSelic.getAll();
+    loadingSelic.value = false;
 };
+const valorSelic = computed((): string | undefined => {
+    if (!dadosSelic.value) return undefined;
+    return dadosSelic.value.map(x => x.valor).sum()!.toFixed(2);
+});
 
 const clientCDI = new CDIClient();
 const dadosCDI = ref<CDI[]>([]);
+const loadingCDI = ref<boolean>(true);
 const carregaCDI = async () => {
+    loadingCDI.value = true;
     dadosCDI.value = await clientCDI.getAll();
+    loadingCDI.value = false;
 };
+const valorCDI = computed((): string | undefined => {
+    if (!dadosCDI.value) return undefined;
+    return dadosCDI.value.slice(-13, -1).map(x => x.VALVALOR).sum()!.toFixed(2);
+});
 
 const clientIPCA = new IPCAClient();
 const dadosIPCA = ref<IPCA[]>([]);
+const loadingIPCA = ref<boolean>(true);
 const carregaIPCA = async () => {
+    loadingIPCA.value = true;
     dadosIPCA.value = await clientIPCA.getAll();
+    loadingIPCA.value = false;
 };
+const valorIPCA = computed((): string | undefined => {
+    if (!dadosIPCA.value) return undefined;
+    return dadosIPCA.value.slice(-13, -1).map(x => x.VALVALOR).sum()!.toFixed(2);
+});
+
+const clientPoupanca = new PoupancaClient();
+const dadosPoupanca = ref<Poupanca[]>([]);
+const loadingPoupanca = ref<boolean>(true);
+const carregaPoupanca = async () => {
+    loadingPoupanca.value = true;
+    dadosPoupanca.value = await clientPoupanca.getAll();
+    loadingPoupanca.value = false;
+};
+const valorPoupanca = computed((): string | undefined => {
+    if (!dadosPoupanca.value) return undefined;
+    return dadosPoupanca.value.map(x => x.valor).sum()!.toFixed(2);
+});
+
 
 // Referência para o elemento DOM onde o gráfico será renderizado
 const chartContainer = ref<HTMLElement | null>(null);
@@ -262,25 +301,47 @@ const goSimulacao = () => {
                 </div>
                 <Line></Line>
                 <div id="quadro-indices">
-                    <div class="row gy-5 gx-3">
-                        <div class="col-12 col-md-6 col-lg-6">
+                    <div class="row gy-4 gx-2">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="quadro-input">
+                                <h6>Selic (a.a.)</h6>
+                                <Skeleton v-if="loadingSelic" height="2rem" width="7rem" class=""></Skeleton>
+                                <h5 v-else>{{ $formatar.numero(valorSelic, 2) }} %</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="quadro-input">
+                                <h6>CDI (a.a.)</h6>
+                                <Skeleton v-if="loadingCDI" height="2rem" width="7rem" class=""></Skeleton>
+                                <h5 v-else>{{ $formatar.numero(valorCDI, 2) }} %</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="quadro-input">
+                                <h6>IPCA (a.a.)</h6>
+                                <Skeleton v-if="loadingIPCA" height="2rem" width="7rem" class=""></Skeleton>
+                                <h5 v-else>{{ $formatar.numero(valorIPCA, 2) }} %</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="quadro-input">
+                                <h6>Poupança (a.m.)</h6>
+                                <Skeleton v-if="loadingPoupanca" height="2rem" width="7rem" class=""></Skeleton>
+                                <h5 v-else>{{ $formatar.numero(valorPoupanca, 2) }} %</h5>
+                            </div>
+                        </div>
+                        <!-- <div class="col-12 col-md-6 col-lg-4">
                             <div class="quadro-input">
                                 <h6>Rentabilidade do CDB (a.a.)</h6>
-                                <h4>{{ rentCDB.toFixed(2) }} %</h4>
+                                <h5>{{ rentCDB.toFixed(2) }} %</h5>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6 col-lg-6">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <div class="quadro-input">
                                 <h6>Rentabilidade da LCI/LCA (a.a.)</h6>
-                                <h4>{{ rentLCI_LCA.toFixed(2) }} %</h4>
+                                <h5>{{ rentLCI_LCA.toFixed(2) }} %</h5>
                             </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-6">
-                            <div class="quadro-input">
-                                <h6>Rentabilidade da Poupança (a.a.)</h6>
-                                <h4>{{ rentaPoup.toFixed(2) }} %</h4>
-                            </div>
-                        </div>
+                        </div> -->
                         <div class="col-12">
                             <p class="aviso mb-5">Esses são os parâmetros padrőes utilizados na sua simulação. Você
                                 pode

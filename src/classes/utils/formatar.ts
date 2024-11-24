@@ -14,7 +14,7 @@ export class Formatar {
   numero = (valor: number | string | undefined, decimais?: number): string => {
     if (valor == undefined) return "0";
 
-    return valor.toLocaleString("pt-br", {
+    return valor.toLocaleString("pt-BR", {
       minimumFractionDigits: decimais,
       maximumFractionDigits: decimais,
     });

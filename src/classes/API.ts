@@ -1,8 +1,10 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { Selic } from "./Selic";
-import { URL_SELIC, URL_CDI, URL_IPCA } from '@/data/urls'
+import { URL_SELIC, URL_CDI, URL_IPCA, URL_POUPANCA } from '@/data/urls'
 import { CDI } from "./CDI";
 import { IPCA } from "./IPCA";
+import { IPoupanca } from "@/interfaces/IPoupanca";
+import { Poupanca } from "./Poupanca";
 
 export class SelicClient {
 
@@ -127,6 +129,48 @@ export class IPCAClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
         }
         return Promise.resolve<IPCA[]>(null as any);
+    }
+}
+
+export class PoupancaClient {
+
+    getAll(): Promise<Poupanca[]> {
+        let url_ = URL_POUPANCA;
+
+        let options_: AxiosRequestConfig = {
+            method: "GET",
+            url: url_,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        let result = axios.get(url_, options_);
+        return result.then((response: AxiosResponse) => this.processGetAll(response));
+    };
+
+    protected processGetAll(response: AxiosResponse): Promise<Poupanca[]> {
+        const status = response.status;        
+        let _headers: any = {};
+        if (status === 200) {            
+            const _responseText = response.data;
+            let result200: any = null;
+            let resultData200 = _responseText;
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Poupanca.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return Promise.resolve<Poupanca[]>(result200);
+
+        } else if (status !== 200 && status !== 204) {
+            const _responseText = response.data;
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+        }
+        return Promise.resolve<Poupanca[]>(null as any);
     }
 }
 
