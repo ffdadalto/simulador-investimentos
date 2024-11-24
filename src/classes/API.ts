@@ -3,7 +3,6 @@ import { Selic } from "./Selic";
 import { URL_SELIC, URL_CDI, URL_IPCA, URL_POUPANCA } from '@/data/urls'
 import { CDI } from "./CDI";
 import { IPCA } from "./IPCA";
-import { IPoupanca } from "@/interfaces/IPoupanca";
 import { Poupanca } from "./Poupanca";
 
 export class SelicClient {
