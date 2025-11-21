@@ -18,8 +18,6 @@ app.use(PrimeVue, {
     }
 });
 
-//teste
-
 app.config.globalProperties.$formatar = InstanceFormatar;
 app.provide("formatar", InstanceFormatar);
 
