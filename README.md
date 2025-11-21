@@ -2,7 +2,7 @@
 
 Aplicação web construída com Vue 3 + TypeScript que permite comparar o desempenho de diferentes produtos de renda fixa brasileiros de maneira visual e intuitiva. O simulador calcula a evolução do patrimônio considerando um aporte inicial, contribuições mensais e a quantidade de meses desejada, exibindo o resultado em um gráfico de barras interativo.
 
-[▶️ Live demo](https://simulador.dadalto.tec.br/)
+🔗 **Live demo:** https://nubank.dadalto.tec.br
 
 ## ✨ Principais funcionalidades
 - **Simulação personalizada:** defina investimento inicial, aportes mensais e prazo da aplicação para ver, em segundos, quanto o capital pode render.
