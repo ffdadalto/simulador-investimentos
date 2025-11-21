@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InputNumber from 'primevue/inputnumber';
 import Line from '@/components/Line.vue';
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Highcharts from 'highcharts';
 import RadioButton from 'primevue/radiobutton';
 import Button from 'primevue/button';
@@ -20,6 +20,16 @@ const vAutofocus = {
     mounted: (el: any): void => {
         el.children[0].focus()
     }
+};
+
+/**
+ * Representa uma opção de investimento comparada na calculadora.
+ */
+type InvestmentOption = {
+    nome: string;
+    rent: number;
+    receber: number;
+    imposto: boolean;
 };
 
 const inicial = ref<number>(1000);
@@ -44,7 +54,7 @@ const auxRentCDB = ref<number>(rentCDB.value);
 const auxRentLCI_LCA = ref<number>(rentLCI_LCA.value);
 const auxRentaPoup = ref<number>(rentaPoup.value);
 
-// Usando o onMounted para inicializar o gráfico quando o componente é montado
+// Carrega índices e monta o gráfico quando o componente estiver pronto
 onMounted(() => {
     renderChart();
     carregaSelic();
@@ -58,8 +68,14 @@ const dadosSelic = ref<Selic[]>([]);
 const loadingSelic = ref<boolean>(true);
 const carregaSelic = async () => {
     loadingSelic.value = true;
-    dadosSelic.value = await clientSelic.getAll();
-    loadingSelic.value = false;
+    try {
+        dadosSelic.value = await clientSelic.getAll();
+    } catch (error) {
+        console.error('Erro ao carregar SELIC', error);
+        dadosSelic.value = [];
+    } finally {
+        loadingSelic.value = false;
+    }
 };
 const valorSelic = computed((): string | undefined => {
     if (!dadosSelic.value) return undefined;
@@ -71,8 +87,14 @@ const dadosCDI = ref<CDI[]>([]);
 const loadingCDI = ref<boolean>(true);
 const carregaCDI = async () => {
     loadingCDI.value = true;
-    dadosCDI.value = await clientCDI.getAll();
-    loadingCDI.value = false;
+    try {
+        dadosCDI.value = await clientCDI.getAll();
+    } catch (error) {
+        console.error('Erro ao carregar CDI', error);
+        dadosCDI.value = [];
+    } finally {
+        loadingCDI.value = false;
+    }
 };
 const valorCDI = computed((): string | undefined => {
     if (!dadosCDI.value) return undefined;
@@ -84,8 +106,14 @@ const dadosIPCA = ref<IPCA[]>([]);
 const loadingIPCA = ref<boolean>(true);
 const carregaIPCA = async () => {
     loadingIPCA.value = true;
-    dadosIPCA.value = await clientIPCA.getAll();
-    loadingIPCA.value = false;
+    try {
+        dadosIPCA.value = await clientIPCA.getAll();
+    } catch (error) {
+        console.error('Erro ao carregar IPCA', error);
+        dadosIPCA.value = [];
+    } finally {
+        loadingIPCA.value = false;
+    }
 };
 const valorIPCA = computed((): string | undefined => {
     if (!dadosIPCA.value) return undefined;
@@ -97,8 +125,14 @@ const dadosPoupanca = ref<Poupanca[]>([]);
 const loadingPoupanca = ref<boolean>(true);
 const carregaPoupanca = async () => {
     loadingPoupanca.value = true;
-    dadosPoupanca.value = await clientPoupanca.getAll();
-    loadingPoupanca.value = false;
+    try {
+        dadosPoupanca.value = await clientPoupanca.getAll();
+    } catch (error) {
+        console.error('Erro ao carregar Poupança', error);
+        dadosPoupanca.value = [];
+    } finally {
+        loadingPoupanca.value = false;
+    }
 };
 const valorPoupanca = computed((): string | undefined => {
     if (!dadosPoupanca.value) return undefined;
@@ -110,14 +144,25 @@ const valorPoupanca = computed((): string | undefined => {
 const chartContainer = ref<HTMLElement | null>(null);
 let chartInstance: Highcharts.Chart | null = null; // Referência para a instância do gráfico
 
-const investimentos = ref<{ nome: string, rent: number, receber: number, imposto: boolean }[]>([
+const investimentos = ref<InvestmentOption[]>([
     { nome: 'LCI e LCA', rent: rentLCI_LCA.value, receber: inicial.value, imposto: false },
     { nome: 'CDB', rent: rentCDB.value, receber: inicial.value, imposto: true },
     { nome: 'Poupança', rent: rentaPoup.value, receber: inicial.value, imposto: false },
 ]);
 
+/**
+ * Mantém a lista de investimentos sempre ordenada pelo valor a receber
+ * para evitar duplicação de lógica no gráfico.
+ */
+const sortedInvestments = computed<InvestmentOption[]>(() =>
+    [...investimentos.value].orderByDescending((i) => i.receber)
+);
+
+const investmentCategories = computed(() => sortedInvestments.value.map((i) => i.nome));
+const investmentValues = computed(() => sortedInvestments.value.map((i) => i.receber));
+
 // Opções do gráfico de barras na horizontal
-const chartOptions: Highcharts.Options = {
+const getChartOptions = (): Highcharts.Options => ({
     chart: {
         type: 'bar', // Tipo de gráfico de barras na horizontal
         backgroundColor: '' // Deixa o fundo do gráfico transparente
@@ -132,7 +177,7 @@ const chartOptions: Highcharts.Options = {
         enabled: false // Desabilita o tooltip
     },
     xAxis: {
-        categories: investimentos.value.orderByDescending(i => i.receber).map(i => i.nome), // Categorias do eixo X
+        categories: investmentCategories.value, // Categorias do eixo X
         title: {
             text: ''
         },
@@ -141,11 +186,11 @@ const chartOptions: Highcharts.Options = {
             style: {
                 color: '#333', // Cor da fonte
                 fontSize: '12px', // Tamanho da fonte
-                fontFamily: 'Arial', // Tipo de fonte                
+                fontFamily: 'Arial', // Tipo de fonte
             }
         },
         gridLineWidth: 0, // Remove as linhas de grade no eixo X
-        lineWidth: 0 // Remove a linha do eixo X            
+        lineWidth: 0 // Remove a linha do eixo X
     },
     yAxis: {
         title: {
@@ -157,11 +202,11 @@ const chartOptions: Highcharts.Options = {
         gridLineWidth: 0, // Remove as linhas de grade no eixo Y
         lineWidth: 0, // Remove a linha do eixo Y
         minorGridLineWidth: 0, // Remove as linhas de grade menores
-        tickWidth: 0, // Remove as linhas de marcação dos ticks        
+        tickWidth: 0, // Remove as linhas de marcação dos ticks
     },
     plotOptions: {
         series: {
-            borderWidth: 0, // Remove as bordas das barras   
+            borderWidth: 0, // Remove as bordas das barras
 
             dataLabels: {
                 enabled: true, // Habilita os rótulos
@@ -177,8 +222,8 @@ const chartOptions: Highcharts.Options = {
                     fontSize: '14px', // Tamanho da fonte dos rótulos
                     textOutline: 'none' // Remove o contorno (bordas) do texto
                 },
-                align: 'right', // Alinha os rótulos ao centro horizontalmente                
-                inside: true, // Garante que os rótulos fiquem dentro das barras                
+                align: 'right', // Alinha os rótulos ao centro horizontalmente
+                inside: true, // Garante que os rótulos fiquem dentro das barras
             }
         }
     },
@@ -189,21 +234,26 @@ const chartOptions: Highcharts.Options = {
         {
             name: '',
             type: 'bar',
-            data: investimentos.value.orderByDescending(i => i.receber).map(i => i.receber), // Dados da série
+            data: investmentValues.value, // Dados da série
             showInLegend: false // Garante que a série não será exibida na legenda
         }
     ]
-};
+});
 
 const renderChart = () => {
+    // Recalcula os rendimentos antes de atualizar o gráfico
     calcularRendimentos();
+    if (!chartContainer.value) {
+        return;
+    }
+
     if (chartInstance) {
         // Atualiza os dados da série existente
-        chartInstance.series[0].setData(investimentos.value.orderByDescending(i => i.receber).map(i => i.receber));
-        chartInstance.xAxis[0].setCategories(investimentos.value.orderByDescending(i => i.receber).map(i => i.nome));
+        chartInstance.series[0].setData(investmentValues.value);
+        chartInstance.xAxis[0].setCategories(investmentCategories.value);
     } else {
         // Cria o gráfico se ainda não foi criado
-        chartInstance = Highcharts.chart(chartContainer.value as HTMLElement, chartOptions);
+        chartInstance = Highcharts.chart(chartContainer.value as HTMLElement, getChartOptions());
     }
 }
 
@@ -218,11 +268,12 @@ const calcularRendimentos = () => {
     for (let i = 0; i < investimentos.value.length; i++) {
         for (let j = 0; j < meses.value; j++) {
             const investimento = investimentos.value[i];
-            if (j != 0) {
+
+            if (j !== 0) {
                 investimento.receber += aporte.value;
             }
 
-            let valorJuros = investimento.receber * (investimento.rent / 12 / 100);
+            const valorJuros = investimento.receber * (investimento.rent / 12 / 100);
             investimento.receber += valorJuros;
         }
     }
@@ -244,6 +295,10 @@ const save = () => {
 const valoresInvestidos = computed((): number => {
     return inicial.value + (aporte.value * meses.value);
 });
+
+// Recalcula o gráfico sempre que os parâmetros principais forem alterados
+watch([inicial, aporte, meses], () => renderChart());
+watch([rentCDB, rentLCI_LCA, rentaPoup], () => renderChart());
 
 const goSimulacao = () => {
     const simulacao = document.getElementById('simulacao-investimento');
@@ -272,18 +327,18 @@ const goSimulacao = () => {
                     <div class="row gx-5 gy-4">
                         <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Investimento Inicial</label>
-                            <InputNumber v-model="inicial" @blur="renderChart()" size="large" mode="currency"
-                                currency="BRL" locale="pt-BR" fluid :min="0.01" v-autofocus />
+                            <InputNumber v-model="inicial" size="large" mode="currency" currency="BRL"
+                                locale="pt-BR" fluid :min="0.01" v-autofocus />
                         </div>
                         <div class="col-12 col-md-6 col-lg-6">
                             <label for="currency-us" class="font-bold block mb-2">Aportes mensais</label>
-                            <InputNumber v-model="aporte" @blur="renderChart()" size="large" mode="currency"
-                                currency="BRL" locale="pt-BR" fluid :min="0.01" />
+                            <InputNumber v-model="aporte" size="large" mode="currency" currency="BRL" locale="pt-BR"
+                                fluid :min="0.01" />
                         </div>
                         <div class="col-12 col-md-4 col-lg-4">
                             <label for="currency-us" class="font-bold block mb-2">Período de aplicação</label>
-                            <InputNumber v-model="meses" @update:modelValue="renderChart()" @blur="renderChart()"
-                                mode="decimal" showButtons :min="1" :max="100" suffix=" meses" fluid size="large" />
+                            <InputNumber v-model="meses" mode="decimal" showButtons :min="1" :max="100"
+                                suffix=" meses" fluid size="large" />
                         </div>
                         <div class="col-12 col-md-4 col-lg-4">
                             <label for="currency-us" class="font-bold block mb-2">Pegamentos dos juros</label>
@@ -413,17 +468,17 @@ const goSimulacao = () => {
         <div class="row g-3 py-2 px-4">
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">CDB (a.a.)</label>
-                <InputNumber v-model="auxRentCDB" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
-                    :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
+                <InputNumber v-model="auxRentCDB" size="large" fluid :minFractionDigits="2" :maxFractionDigits="2"
+                    :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">LC (a.a.)</label>
-                <InputNumber v-model="auxRentLCI_LCA" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <InputNumber v-model="auxRentLCI_LCA" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
             <div class="col-12">
                 <label for="currency-us" class="font-bold block mb-2">Poupança (a.a.)</label>
-                <InputNumber v-model="auxRentaPoup" @blur="renderChart()" size="large" fluid :minFractionDigits="2"
+                <InputNumber v-model="auxRentaPoup" size="large" fluid :minFractionDigits="2"
                     :maxFractionDigits="2" :min="0.01" :max="100" locale="pt-BR" />
             </div>
         </div>

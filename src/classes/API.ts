@@ -5,6 +5,7 @@ import { CDI } from "./CDI";
 import { IPCA } from "./IPCA";
 import { Poupanca } from "./Poupanca";
 
+// Cliente responsável por buscar dados históricos da SELIC no serviço público.
 export class SelicClient {
 
     getAll(): Promise<Selic[]> {
@@ -47,6 +48,7 @@ export class SelicClient {
     }
 }
 
+// Cliente responsável por buscar dados do CDI.
 export class CDIClient {
 
     getAll(): Promise<CDI[]> {
@@ -89,6 +91,7 @@ export class CDIClient {
     }
 }
 
+// Cliente responsável por buscar dados do IPCA.
 export class IPCAClient {
 
     getAll(): Promise<IPCA[]> {
@@ -131,6 +134,7 @@ export class IPCAClient {
     }
 }
 
+// Cliente responsável por buscar os rendimentos da poupança.
 export class PoupancaClient {
 
     getAll(): Promise<Poupanca[]> {
