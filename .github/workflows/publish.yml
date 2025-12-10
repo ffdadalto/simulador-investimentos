@@ -1,4 +1,4 @@
-name: Deploy Node App via FTP
+name: Deploy Node App
 
 on:
     push:
@@ -28,9 +28,9 @@ jobs:
             - name: Deploy via FTP
               uses: SamKirkland/FTP-Deploy-Action@4.3.0
               with:
-                  server: ${{ secrets.SSH_HOST }}
-                  username: ${{ secrets.SSH_USER }}
-                  password: ${{ secrets.SSH_PASS }}
+                  server: ${{ secrets.WIN_HOST }}
+                  username: ${{ secrets.WIN_USERNAME }}
+                  password: ${{ secrets.WIN_PASSWORD }}
                   local-dir: dist/
                   server-dir: /Simulador/
-                  port: ${{ secrets.SSH_PORT }}
+                  port: ${{ secrets.WIN_PORT }}
