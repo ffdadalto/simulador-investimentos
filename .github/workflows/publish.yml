@@ -1,0 +1,47 @@
+name: Deploy to linux home server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22' # Altere para a versão do Node.js que você usa
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build the application
+      run: npm run build
+
+    - name: Install SSH client
+      run: sudo apt-get install -y sshpass
+
+    - name: Transfer files to server
+      env:
+        SSH_PASS: ${{ secrets.SSH_PASS }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_PORT: ${{ secrets.SSH_PORT }}
+      run: |
+        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "rm -rf /var/www/SimulaInvest/*"
+        sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P "$SSH_PORT" -r ./dist/* "$SSH_USER@$SSH_HOST:/var/www/SimulaInvest"
+
+    - name: Restart NGINX
+      env:
+        SSH_PASS: ${{ secrets.SSH_PASS }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_PORT: ${{ secrets.SSH_PORT }}
+      run: |
+        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "sudo systemctl restart nginx"
