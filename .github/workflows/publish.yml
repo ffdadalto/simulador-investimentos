@@ -32,5 +32,5 @@ jobs:
                   username: ${{ secrets.SSH_USER }}
                   password: ${{ secrets.SSH_PASS }}
                   local-dir: dist/
-                  server-dir: /Nubank/
+                  server-dir: /Simulador/
                   port: ${{ secrets.SSH_PORT }}
